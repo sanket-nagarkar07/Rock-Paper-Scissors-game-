@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Paper Scissors Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+        body { background-color: #f0f2f5; min-height: 100vh; padding: 20px; text-align: center; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .options { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+        .option { cursor: pointer; padding: 10px; border: 2px solid #ddd; border-radius: 8px; transition: 0.3s; }
+        .option:hover { transform: scale(1.05); border-color: #007bff; }
+        .option img { width: 80px; height: 80px; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .results-table th, .results-table td { padding: 12px; text-align: center; border: 1px solid #ddd; }
+        .winner { background-color: #d4edda; color: #155724; }
+        .loser { background-color: #f8d7da; color: #721c24; }
+        .hidden { display: none; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px; }
+        .play-again { background-color: #28a745; color: white; }
+        .exit { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rock Paper Scissors</h1>
+
+        <!-- Round Selection -->
+        <div id="round-selection">
+            <h2>Select Number of Rounds</h2>
+            <select id="rounds">
+                <option value="3">3 Rounds</option>
+                <option value="5">5 Rounds</option>
+                <option value="7">7 Rounds</option>
+                <option value="10">10 Rounds</option>
+            </select>
+            <button onclick="startGame()">Start Game</button>
+        </div>
+
+        <!-- Game Section -->
+        <div id="game-section" class="hidden">
+            <h2>Current Round: <span id="round-number">0</span> / <span id="total-rounds">0</span></h2>
+            <div class="options">
+                <div class="option" onclick="playGame('Rock')"><img src="/static/rock.png" alt="Rock"><p>Rock</p></div>
+                <div class="option" onclick="playGame('Paper')"><img src="/static/paper.png" alt="Paper"><p>Paper</p></div>
+                <div class="option" onclick="playGame('Scissors')"><img src="/static/scissors.png" alt="Scissors"><p>Scissors</p></div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="hidden">
+            <h2>Game Results</h2>
+            <table class="results-table">
+                <thead>
+                    <tr><th>Player Choice</th><th>Computer Choice</th><th>Result</th></tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Final Winner Section -->
+        <div id="final-winner-section" class="hidden">
+            <h2 id="final-winner"></h2>
+            <button class="play-again" onclick="location.reload()">Play Again</button>
+            <button class="exit" onclick="alert('Thanks for playing!')">End Game</button>
+        </div>
+    </div>
+
+    <script>
+        function startGame() {
+            let rounds = document.getElementById("rounds").value;
+            fetch("/start_game", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rounds })
+            }).then(() => {
+                document.getElementById("round-selection").classList.add("hidden");
+                document.getElementById("game-section").classList.remove("hidden");
+                document.getElementById("results-section").classList.remove("hidden");
+                document.getElementById("total-rounds").textContent = rounds;
+            });
+        }
+
+        function playGame(playerChoice) {
+            fetch("/play", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ choice: playerChoice })
+            }).then(res => res.json()).then(data => {
+                document.getElementById("round-number").textContent = data.current_round;
+                document.getElementById("results-body").innerHTML += `<tr><td>${data.player_choice}</td><td>${data.computer_choice}</td><td>${data.result}</td></tr>`;
+                if (data.is_game_over) {
+                    document.getElementById("game-section").classList.add("hidden");
+                    document.getElementById("final-winner-section").classList.remove("hidden");
+                    document.getElementById("final-winner").textContent = `Final Winner: ${data.final_winner}`;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
